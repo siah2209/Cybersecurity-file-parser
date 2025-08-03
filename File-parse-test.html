@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity File Parser</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f8;
+            text-align: center;
+            padding: 50px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .container-scale {
+            margin-right: 30px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            display: block;
+            margin: 20px auto;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+        }
+
+        button {
+            padding: 14px 24px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:active {
+            background-color: #004085;
+            transform: scale(0.98);
+        }
+
+        #viewFileButton {
+            background-color: #6c757d;
+        }
+
+        #viewFileButton:hover {
+            background-color: #5a6268;
+        }
+
+        #parseForm {
+            margin-top: 20px;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 1em;
+            background-color: #eee;
+            border-radius: 0.5em;
+            color: white;
+            position: absolute;
+            bottom: -2em;
+            left: 0;
+            margin-top: 3em;
+            overflow: hidden;
+            visibility: hidden;
+        }
+
+        .progress-bar::before {
+            content: attr(data-label);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: var(--progress);
+            min-width: 2rem;
+            max-width: calc(100% - 1em);
+            background-color: teal;
+            border-radius: 0.5em;
+            transition: width 0.2s ease;
+            font-size: 0.75em;
+            padding-left: 0.5em;
+            padding-right: 0.5em;
+        }
+
+        .container-scale {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 250px;
+            font-size: 1em;
+            text-align: left;
+        }
+
+        .container-scale h1 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .risk-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .risk-item.high {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .risk-item.moderate {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .risk-item.worth {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .risk-item.low {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+
+        .container-scale h1 {
+            font-size: 1em;
+            margin: 0 0 5px 0;
+            grid-column: 1 / 3;
+            grid-row: 1;
+        }
+
+        .container-scale p {
+            margin: 0;
+            grid-column: 1;
+            align-self: center;
+        }
+
+        .container-scale p:nth-child(2) {
+            grid-row: 2;
+            color: #dc3545;
+        }
+
+        .container-scale p:nth-child(3) {
+            grid-row: 3;
+            color: #ffc107;
+        }
+
+        .container-scale p:nth-child(4) {
+            grid-row: 4;
+            color: #17a2b8;
+        }
+
+        .container-scale p:nth-child(5) {
+            grid-row: 5;
+            color: #28a745;
+        }
+
+        .container-scale span {
+            grid-column: 2;
+            text-align: right;
+            font-weight: bold;
+            align-self: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Cybersecurity File Parser</h2>
+        <form id="parseForm">
+            <input type="text" id="filePathInput" name="filePathInput" placeholder="Enter file path to analyze" required>
+            <button type="button" onclick="validateFilePath()">Analyze File</button>
+            <button type="button" id="viewFileButton" onclick="downloadPDF()">View File Contents</button>
+            <div id="errorMessage" class="error-message"></div>
+        </form>
+        <div class="progress-bar" data-label="Loading..." style="--progress: 0%;"></div>
+        <div id="resultsOutput" style="margin-top: 30px;"></div>
+
+
+    </div>
+
+    <div class="container-scale">
+        <h1>Risk Scale</h1>
+        <div class="risk-item high">
+            <p>Extreme Risk</p>
+            <span>40+</span>
+        </div>
+        <div class="risk-item moderate">
+            <p>High Risk</p>
+            <span>20-40</span>
+        </div>
+        <div class="risk-item worth">
+            <p>Worth-noting</p>
+            <span>10-20</span>
+        </div>
+        <div class="risk-item low">
+            <p>Low Risk</p>
+            <span>0–10</span>
+        </div>
+    </div>
+    
+    <script>
+        const progressBar = document.querySelector('.progress-bar');
+        const errorMessageDiv = document.getElementById("errorMessage");
+    
+        function updateProgressBar(percentage) {
+            progressBar.style.setProperty('--progress', `${percentage}%`);
+            progressBar.setAttribute('data-label', `Loading... ${percentage}%`);
+        }
+    
+        function validateFilePath() {
+            let directory = document.getElementById("filePathInput").value.trim();
+            directory = directory.replace(/^"|"$/g, '');
+    
+            if (!directory) {
+                errorMessageDiv.textContent = "Please enter a file path.";
+                return;
+            }
+    
+            errorMessageDiv.textContent = "";
+            progressBar.style.visibility = 'visible';
+            updateProgressBar(10);
+    
+            fetch('/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ directory })
+            })
+            .then(res => res.json())
+            .then(data => {
+            updateProgressBar(100);
+            progressBar.setAttribute('data-label', 'Complete');
+
+            if (data.error) {
+                errorMessageDiv.textContent = "Error: " + data.error;
+                return;
+            }
+
+            // ✅ Confirm scan worked
+            document.getElementById("resultsOutput").innerHTML = `
+                <p style="color: green; font-weight: bold;">✔️ Scan completed successfully.<br>
+                Click <strong>View File Contents</strong> to download your report.</p>`;
+            })
+
+            .catch(err => {
+                errorMessageDiv.textContent = "Error analyzing the file.";
+                console.error(err);
+                progressBar.style.visibility = 'hidden';
+            });
+        }
+    
+        function displayResults(results) {
+            const outputDiv = document.getElementById("resultsOutput");
+            outputDiv.innerHTML = ""; // Clear previous
+    
+            if (!results.length) {
+                outputDiv.innerHTML = "<p>No files processed.</p>";
+                return;
+            }
+    
+            results.forEach((result, index) => {
+                const fileBlock = document.createElement("div");
+                fileBlock.style.marginBottom = "30px";
+                fileBlock.style.textAlign = "left";
+    
+                fileBlock.innerHTML = `
+                    <h3>📄 File ${index + 1}: ${result.file}</h3>
+                    <p><strong>Path:</strong> ${result.path}</p>
+                    <p><strong>Hash:</strong> ${result.hash}</p>
+                    <p><strong>📊 Risk Score:</strong> ${result.score.toFixed(2)}</p>
+                    <h4>🔍 Keyword Matches:</h4>
+                    ${formatKeywordMatches(result.keywords)}
+                    <h4>⚠️ Warning Words:</h4>
+                    ${formatWarningWords(result.warnings)}
+                    ${result.stego ? `<h4>🕵️ Stego Message:</h4><pre>${result.stego}</pre>` : ""}
+                    <hr />
+                `;
+    
+                outputDiv.appendChild(fileBlock);
+            });
+        }
+    
+        function formatKeywordMatches(matches) {
+            if (!matches || Object.keys(matches).length === 0) {
+                return "<p>No flagged keywords.</p>";
+            }
+    
+            let html = "<ul>";
+            for (const [keyword, entries] of Object.entries(matches)) {
+                html += `<li><strong>${keyword}</strong><ul>`;
+                entries.forEach(([score, sentence]) => {
+                    html += `<li>Score: ${score.toFixed(4)}<br/>"${sentence}"</li>`;
+                });
+                html += `</ul></li>`;
+            }
+            html += "</ul>";
+            return html;
+        }
+    
+        function formatWarningWords(warnings) {
+            if (!warnings || Object.keys(warnings).length === 0) {
+                return "<p>No warning words.</p>";
+            }
+    
+            let html = "<ul>";
+            for (const [word, count] of Object.entries(warnings)) {
+                html += `<li>${word}: ${count}</li>`;
+            }
+            html += "</ul>";
+            return html;
+        }
+    </script>
+
+<script>
+    function downloadPDF() {
+        fetch('/view', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    alert("Error: " + data.error);
+                });
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            if (!blob) return;
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "scan_results.pdf";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(err => {
+            alert("Failed to download PDF.");
+            console.error(err);
+        });
+    }
+</script>
